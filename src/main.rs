@@ -1,12 +1,13 @@
 use std::io;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode, KeyEvent},
-    style::Stylize,
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{block::{Position, Title}, Block, Borders, BorderType, List, ListItem, Paragraph, Padding},
     layout::{Layout, Constraint, Direction, Alignment},
     Frame,
 };
+use ratatui::prelude::*;
 mod tui;
 
 struct Task {
@@ -27,6 +28,7 @@ impl Task {
 pub struct App {
     exit: bool,
     tasks: Vec<Task>,
+    selected_task: usize,
 }
 
 impl App {
@@ -46,7 +48,13 @@ impl App {
         let title = Title::from(" Rust Todo ".blue().bold());
         let instructions = Title::from(Line::from(vec![
             " Quit ".into(),
-            "<Q> ".blue().bold(),
+            "<Q>".blue().bold(),
+            " | ".into(),
+            "Navigate ".into(),
+            "<Up/Down>".blue().bold(),
+            " | ".into(),
+            "Toggle Status ".into(),
+            "<Enter> ".green().bold(),
         ]));
         let block = Block::default()
             .title(title.alignment(Alignment::Center))
@@ -77,9 +85,16 @@ impl App {
         frame.render_widget(sidebar, inner[0]);
 
         // Task List
-        let tasks: Vec<ListItem> = self.tasks.iter().map(|task| {
+        let tasks: Vec<ListItem> = self.tasks.iter().enumerate().map(|(i, task)| {
             let status = if task.status { "[x]" } else { "[ ]" };
-            ListItem::new(Span::raw(format!("{} {}", status, task.description)))
+            let content = format!("{} {}", status, task.description);
+
+            // Highlight the selected task
+            if i == self.selected_task {
+                ListItem::new(Span::styled(content, Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)))
+            } else {
+                ListItem::new(Span::raw(content))
+            }
         }).collect();
         let task_list = List::new(tasks)
             .block(Block::default().borders(Borders::ALL).title(" Task List ".green().bold()).padding(padding));
@@ -94,8 +109,26 @@ impl App {
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) {
-        if key_event.code == KeyCode::Char('q') {
-            self.exit = true;
+        match key_event.code {
+            KeyCode::Char('q') => {
+                self.exit = true;
+            }
+            KeyCode::Up => {
+                if self.selected_task > 0 {
+                    self.selected_task -= 1;
+                }
+            }
+            KeyCode::Down => {
+                if self.selected_task < self.tasks.len() - 1 {
+                    self.selected_task += 1;
+                }
+            }
+            KeyCode::Enter => {
+                if let Some(task) = self.tasks.get_mut(self.selected_task) {
+                    task.status = !task.status;
+                }
+            }
+            _ => {}
         }
     }
 }
