@@ -56,15 +56,8 @@ impl App {
             "Navigate ".into(),
             "<Up/Down>".blue().bold(),
             " | ".into(),
-            if self.input_mode {
-                "Insert ".into()
-            } else {
-                "Toggle Status ".into()
-            },
-            "<Enter>".green().bold(),
-            " | ".into(),
             "Add Task ".into(),
-            "<n> ".yellow().bold(),
+            "<N> ".yellow().bold(),
         ]));
         let block = Block::default()
             .title(title.alignment(Alignment::Center))
@@ -84,8 +77,8 @@ impl App {
             .direction(Direction::Horizontal)
             .margin(1)
             .constraints([
-                Constraint::Percentage(30),
-                Constraint::Percentage(70),
+                Constraint::Percentage(25),
+                Constraint::Percentage(75),
             ].as_ref())
             .split(area);
 
@@ -161,9 +154,20 @@ impl App {
                     task.status = !task.status;
                 }
             }
+            KeyCode::Esc => {
+                if self.input_mode {
+                    self.input_buffer.clear();
+                    self.input_mode = false;
+                }
+            }
             KeyCode::Char('n') => {
-                self.input_mode = true;
-                self.input_buffer.clear();
+                if !self.input_mode {
+                    self.input_mode = true;
+                    self.input_buffer.clear();
+                }
+                else {
+                    self.input_buffer.push('n');
+                }
             }
             KeyCode::Char(c) => {
                 if self.input_mode {
