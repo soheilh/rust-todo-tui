@@ -29,6 +29,8 @@ pub struct App {
     exit: bool,
     tasks: Vec<Task>,
     selected_task: usize,
+    input_mode: bool,
+    input_buffer: String,
 }
 
 impl App {
@@ -43,6 +45,7 @@ impl App {
     fn render_frame(&self, frame: &mut Frame) {
         let area = frame.area();
         let padding = Padding::new(1, 1, 1, 1);
+        let h_padding = Padding::new(1, 1, 0, 0);
 
         // Main block with title and instructions at the bottom
         let title = Title::from(" Rust Todo ".blue().bold());
@@ -53,8 +56,15 @@ impl App {
             "Navigate ".into(),
             "<Up/Down>".blue().bold(),
             " | ".into(),
-            "Toggle Status ".into(),
-            "<Enter> ".green().bold(),
+            if self.input_mode {
+                "Insert ".into()
+            } else {
+                "Toggle Status ".into()
+            },
+            "<Enter>".green().bold(),
+            " | ".into(),
+            "Add Task ".into(),
+            "<n> ".yellow().bold(),
         ]));
         let block = Block::default()
             .title(title.alignment(Alignment::Center))
@@ -69,8 +79,8 @@ impl App {
         // Render the main block
         frame.render_widget(block, area);
 
-        // Split the block into sections for sidebar and task list
-        let inner = Layout::default()
+        // Split the block into sections for sidebar, task list, and input area
+        let outer_layout = Layout::default()
             .direction(Direction::Horizontal)
             .margin(1)
             .constraints([
@@ -79,12 +89,20 @@ impl App {
             ].as_ref())
             .split(area);
 
+        let inner_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Min(1),
+                Constraint::Length(3),
+            ].as_ref())
+            .split(outer_layout[1]);
+
         // Sidebar Panel
         let sidebar = Paragraph::new("Sidebar")
             .block(Block::default().borders(Borders::ALL).title(" Sidebar ".green().bold()).padding(padding));
-        frame.render_widget(sidebar, inner[0]);
+        frame.render_widget(sidebar, outer_layout[0]);
 
-        // Task List
+        // Task List Panel
         let tasks: Vec<ListItem> = self.tasks.iter().enumerate().map(|(i, task)| {
             let status = if task.status { "[x]" } else { "[ ]" };
             let content = format!("{} {}", status, task.description);
@@ -98,7 +116,17 @@ impl App {
         }).collect();
         let task_list = List::new(tasks)
             .block(Block::default().borders(Borders::ALL).title(" Task List ".green().bold()).padding(padding));
-        frame.render_widget(task_list, inner[1]);
+        frame.render_widget(task_list, inner_layout[0]);
+
+        // Input area for new tasks
+        let input = Paragraph::new(self.input_buffer.as_str())
+            .block(Block::default().borders(Borders::ALL).title(" Add New Task ".yellow().bold()).padding(h_padding))
+            .style(if self.input_mode {
+                Style::default().fg(Color::Yellow)
+            } else {
+                Style::default()
+            });
+        frame.render_widget(input, inner_layout[1]);
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
@@ -114,18 +142,37 @@ impl App {
                 self.exit = true;
             }
             KeyCode::Up => {
-                if self.selected_task > 0 {
+                if !self.input_mode && self.selected_task > 0 {
                     self.selected_task -= 1;
                 }
             }
             KeyCode::Down => {
-                if self.selected_task < self.tasks.len() - 1 {
+                if !self.input_mode && self.selected_task < self.tasks.len() - 1 {
                     self.selected_task += 1;
                 }
             }
             KeyCode::Enter => {
-                if let Some(task) = self.tasks.get_mut(self.selected_task) {
+                if self.input_mode {
+                    if !self.input_buffer.is_empty() {
+                        self.tasks.push(Task::new(self.input_buffer.drain(..).collect()));
+                    }
+                    self.input_mode = false;
+                } else if let Some(task) = self.tasks.get_mut(self.selected_task) {
                     task.status = !task.status;
+                }
+            }
+            KeyCode::Char('n') => {
+                self.input_mode = true;
+                self.input_buffer.clear();
+            }
+            KeyCode::Char(c) => {
+                if self.input_mode {
+                    self.input_buffer.push(c);
+                }
+            }
+            KeyCode::Backspace => {
+                if self.input_mode {
+                    self.input_buffer.pop();
                 }
             }
             _ => {}
