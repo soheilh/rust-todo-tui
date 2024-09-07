@@ -1,5 +1,5 @@
 use std::io;
-use crate::app::{App, Task};
+use crate::app::App;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEvent};
 
 pub fn handle_events(app: &mut App) -> io::Result<()> {
@@ -25,11 +25,12 @@ fn handle_key_event(app: &mut App, key_event: KeyEvent) {
         KeyCode::Enter => {
             if app.input_mode {
                 if !app.input_buffer.is_empty() {
-                    app.tasks.push(Task::new(app.input_buffer.drain(..).collect()));
+                    let input = app.input_buffer.drain(..).collect(); // Store drained content
+                    app.add_task(input);
                 }
                 app.input_mode = false;
-            } else if let Some(task) = app.tasks.get_mut(app.selected_task) {
-                task.status = !task.status;
+            } else {
+                app.update_task_status(app.selected_task, !app.tasks[app.selected_task].status);
             }
         }
         KeyCode::Esc => {

@@ -3,12 +3,14 @@ mod tui;
 mod app;
 mod ui;
 mod events;
+mod db;
 
 fn main() -> io::Result<()> {
+    let database = db::Database::new("tasks.db").expect("Failed to initialize database");
+    database.initialize().expect("Failed to initialize tables");
+
     let mut app = app::App::default();
-    app.tasks.push(app::Task::new("First Task".into()));
-    app.tasks.push(app::Task::new("Second Task".into()));
-    app.tasks.push(app::Task::new("Third Task".into()));
+    app.db = Some(database);
 
     let mut terminal = tui::init()?;
     let app_result = app.run(&mut terminal);
