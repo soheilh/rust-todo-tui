@@ -31,6 +31,14 @@ impl Database {
         Ok(())
     }
 
+    pub fn delete_task(&self, id: i32) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM tasks WHERE id = ?1",
+            params![id],
+        )?;
+        Ok(())
+    }
+
     pub fn update_task_status(&self, id: i32, status: bool) -> Result<()> {
         self.conn.execute(
             "UPDATE tasks SET status = ?1 WHERE id = ?2",

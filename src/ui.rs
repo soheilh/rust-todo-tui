@@ -23,7 +23,10 @@ pub fn render_frame(app: &App, frame: &mut Frame) {
         "<Up/Down>".blue().bold(),
         " | ".into(),
         "Add Task ".into(),
-        "<N> ".yellow().bold(),
+        "<N>".yellow().bold(),
+        " | ".into(),
+        "Delete Task ".into(),
+        "<D> ".red().bold(),
     ]));
     let block = Block::default()
         .title(title.alignment(Alignment::Center))

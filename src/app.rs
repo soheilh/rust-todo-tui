@@ -53,6 +53,22 @@ impl App {
         }
     }
 
+    pub fn delete_task(&mut self, task_index: usize) {
+        if task_index < self.tasks.len() {
+            let task_id = self.tasks[task_index].id; // Save task ID before deletion
+
+            if let Some(db) = &self.db {
+                db.delete_task(task_id as i32).expect("Failed to delete task from the database");
+                self.tasks.remove(task_index); // Remove task from the list
+            }
+
+            // Adjust selected_task index
+            if self.selected_task >= self.tasks.len() {
+                self.selected_task = self.tasks.len().saturating_sub(1);
+            }
+        }
+    }
+
     pub fn update_task_status(&mut self, task_index: usize, status: bool) {
         if let Some(task) = self.tasks.get_mut(task_index) {
             task.status = status;

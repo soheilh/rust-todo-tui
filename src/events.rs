@@ -47,6 +47,9 @@ fn handle_key_event(app: &mut App, key_event: KeyEvent) {
                 app.input_buffer.push('n');
             }
         }
+        KeyCode::Char('d') => {
+            app.delete_task(app.selected_task)
+        }
         KeyCode::Char(c) => {
             if app.input_mode {
                 app.input_buffer.push(c);
