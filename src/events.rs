@@ -11,7 +11,11 @@ pub fn handle_events(app: &mut App) -> io::Result<()> {
 
 fn handle_key_event(app: &mut App, key_event: KeyEvent) {
     match key_event.code {
-        KeyCode::Char('q') => app.exit = true,
+        KeyCode::Char('q') => {
+            if !app.input_mode {
+                app.exit = true;
+            }
+        }
         KeyCode::Up => {
             if !app.input_mode && app.selected_task > 0 {
                 app.selected_task -= 1;
@@ -48,7 +52,11 @@ fn handle_key_event(app: &mut App, key_event: KeyEvent) {
             }
         }
         KeyCode::Char('d') => {
-            app.delete_task(app.selected_task)
+            if !app.input_mode {
+                app.delete_task(app.selected_task)
+            } else {
+                app.input_buffer.push('d');
+            }
         }
         KeyCode::Char(c) => {
             if app.input_mode {
